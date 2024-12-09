@@ -1,0 +1,54 @@
+services:
+  acme-server:
+    image: knrdl/acme-ca-server:latest
+    container_name: acme-server
+    hostname: acme-server
+    restart: always
+    mem_limit: 250m
+    environment:
+      EXTERNAL_URL: https://acme.${BASE_DOMAIN_NAME}
+      ACME_TERMS_OF_SERVICE_URL: https://acme.${BASE_DOMAIN_NAME}/terms
+      WEB_APP_TITLE: CasjaysDev CA
+      WEB_ENABLED: true
+      WEB_ENABLE_PUBLIC_LOG: true
+      WEB_APP_DESCRIPTION: CasjaysDev acme server
+      CA_ENABLED: true
+      CA_CERT_LIFETIME: 120d
+      CA_CRL_LIFETIME: 7d
+      CA_ENCRYPTION_KEY: ${CA_ENCRYPTION_KEY:-}
+      MAIL_ENABLED: true
+      MAIL_HOST: ${EMAIL_SERVER_HOST}
+      MAIL_PORT: ${EMAIL_SERVER_PORT}
+      MAIL_SENDER: ${EMAIL_SERVER_FROM_NAME}
+      MAIL_ENCRYPTION: starttls
+      MAIL_NOTIFY_WHEN_CERT_EXPIRED: true
+      MAIL_NOTIFY_ON_ACCOUNT_CREATION: true
+      MAIL_WARN_BEFORE_CERT_EXPIRES: 14d
+      DB_DSN: postgresql://postgres:acme-server-db-password@acme-db/postgres
+    ports:
+      - '172.17.0.1:59082:8080'
+    volumes:
+      - /etc/ssl/CA/CasjaysDev/certs/ca.crt:/import/ca.pem:ro 
+      - /etc/ssl/CA/CasjaysDev/private/ca.key:/import/ca.key:ro 
+    depends_on:
+      - acme-db
+    networks:
+      - acme
+
+  acme-db:
+    image: postgres:15-alpine
+    container_name: acme-db
+    hostname: acme-db
+    restart: always
+    mem_limit: 250m
+    environment:
+      POSTGRES_PASSWORD: acme-server-db-password
+    volumes:
+      - /var/lib/srv/$USER/docker/knrdl/acme-ca-server/latest/rootfs/data/db/postgresql:/var/lib/postgresql/data
+    networks:
+      - acme
+
+networks:
+  acme:
+    name: acme
+    external: false
