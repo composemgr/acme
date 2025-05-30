@@ -21,15 +21,15 @@ services:
       - ACME_TERMS_OF_SERVICE_URL=https://${BASE_HOST_NAME:-${HOSTNAME}}/terms
       - WEB_ENABLED=true
       - WEB_ENABLE_PUBLIC_LOG=true
-      - WEB_APP_TITLE=CasjaysDev CA
-      - WEB_APP_DESCRIPTION=CasjaysDev acme server
+      - 'WEB_APP_TITLE=${APP_ORG_NAME:-Acme} CA'
+      - 'WEB_APP_DESCRIPTION=${APP_ORG_NAME:-Acme} server'
       - CA_ENABLED=true
       - CA_CRL_LIFETIME=7d
       - CA_CERT_LIFETIME=120d
       - MAIL_ENABLED=true
       - MAIL_HOST=${EMAIL_SERVER_HOST:-172.17.0.1}
       - MAIL_PORT=${EMAIL_SERVER_PORT:-25}
-      - MAIL_SENDER=${EMAIL_SERVER_FROM_NAME}
+      - 'MAIL_SENDER=${EMAIL_SERVER_FROM_NAME}'
       - MAIL_ENCRYPTION=starttls
       - MAIL_WARN_BEFORE_CERT_EXPIRES=14d
       - MAIL_NOTIFY_WHEN_CERT_EXPIRED=true
@@ -39,8 +39,8 @@ services:
     ports:
       - '172.17.0.1:59082:8080'
     volumes:
-      - /etc/ssl/CA/CasjaysDev/certs/ca.crt:/import/ca.pem:ro
-      - /etc/ssl/CA/CasjaysDev/private/ca.key:/import/ca.key:ro
+      - '/etc/ssl/CA/CasjaysDev/certs/ca.crt:/import/ca.pem:ro'
+      - '/etc/ssl/CA/CasjaysDev/private/ca.key:/import/ca.key:ro'
     depends_on:
       db:
         condition: service_healthy
@@ -58,7 +58,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=DkVwdvMKo9c1nf5wTGStzXYnSHRLiiIf
     volumes:
-      - '/var/lib/srv/$USER/docker/db/postgresql/acme:/var/lib/postgresql/data'
+      - '/var/lib/srv/${USER}/databases/postgresql/acme:/var/lib/postgresql/data'
     healthcheck:
       test: ['CMD-SHELL', 'runuser', '-u', 'postgres', '--', 'pg_isready']
       interval: 10s
