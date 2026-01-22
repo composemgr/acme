@@ -76,7 +76,7 @@ services:
       TZ: ${TZ:-America/New_York}
       POSTGRES_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
-      - './rootfs/db/postgres/acme:/var/lib/postgresql/data'
+      - './rootfs/data/db/postgres/acme:/var/lib/postgresql/data'
     healthcheck:
       test: ['CMD-SHELL', 'runuser', '-u', 'postgres', '--', 'pg_isready']
       interval: 10s
