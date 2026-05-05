@@ -56,7 +56,7 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/data/db/postgres/acme` - Data storage
+- `./volumes/data/db/postgres/acme` - Data storage
 
 ## 🔐 Security
 
