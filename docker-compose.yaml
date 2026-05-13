@@ -11,7 +11,7 @@ services:
   server:
     image: knrdl/acme-ca-server:latest
     container_name: acme-server
-    domainname: ${BASE_DOMAIN_NAME}
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
     hostname: ${BASE_HOST_NAME:-$HOSTNAME}
     restart: always
     pull_policy: always
@@ -67,7 +67,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: acme-db
-    domainname: ${BASE_DOMAIN_NAME}
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
     hostname: acme-db
     restart: always
     pull_policy: always
