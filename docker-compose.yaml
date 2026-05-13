@@ -18,6 +18,8 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: acme-server
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       # Core ACME Server Configuration
       EXTERNAL_URL: https://${BASE_HOST_NAME:-$HOSTNAME}
       DB_DSN: postgresql://postgres:${DB_ADMIN_PASS:-changeme_admin_password}@acme-db/postgres
@@ -61,8 +63,26 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://acme-server:8080'
+      - 'cloudflare.hostname=acme.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.acme-server.entrypoints=http'
+      - 'traefik.http.routers.acme-server-secure.tls=true'
+      - 'traefik.http.routers.acme-server.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.acme-server-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.acme-server.middlewares=acme-server-https-redirect'
+      - 'traefik.http.routers.acme-server-secure.entrypoints=https'
+      - 'traefik.http.routers.acme-server-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.acme-server-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.acme-server-secure.service=acme-server'
+      - 'traefik.http.services.acme-server.loadbalancer.server.port=8080'
     networks:
       - acme
+      - proxy
+      - cloudflare
 
   db:
     image: postgres:15-alpine
@@ -74,6 +94,7 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: acme-db
       POSTGRES_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
       - './volumes/data/db/postgres/acme:/var/lib/postgresql/data'
@@ -89,3 +110,7 @@ networks:
   acme:
     name: acme
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
