@@ -1,4 +1,4 @@
-# nginx proxy address - http://172.17.0.1:59082
+# nginx proxy address - http://172.17.0.1:64100
 
 name: acme
 x-logging: &default-logging
@@ -22,14 +22,12 @@ services:
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       # Core ACME Server Configuration
       EXTERNAL_URL: https://${BASE_HOST_NAME:-$HOSTNAME}
-      DB_DSN: postgresql://postgres:${DB_ADMIN_PASS:-changeme_admin_password}@acme-db/postgres
-      
+      DB_DSN: postgresql://postgres:${DB_ADMIN_PASS:-changeme_admin_password}@db:5432
       # ACME Protocol Settings
       ACME_TERMS_OF_SERVICE_URL: https://${BASE_HOST_NAME:-$HOSTNAME}/terms
       ACME_MAIL_REQUIRED: true
-      ACME_MAIL_TARGET_REGEX: 
-      ACME_TARGET_DOMAIN_REGEX: 
-      
+      ACME_MAIL_TARGET_REGEX:
+      ACME_TARGET_DOMAIN_REGEX:
       # Built-in CA Settings
       CA_ENABLED: true
       CA_ENCRYPTION_KEY: ${ENCRYPTION_KEY:-changeme_ca_encryption_key}
@@ -37,7 +35,6 @@ services:
       CA_CERT_LIFETIME: 60d
       CA_CERT_CDP_ENABLED: true
       CA_CRL_LIFETIME: 7d
-      
       # Email Notifications
       MAIL_ENABLED: true
       MAIL_HOST: ${EMAIL_SERVER_HOST:-172.17.0.1}
@@ -45,44 +42,25 @@ services:
       MAIL_USERNAME: ${EMAIL_SERVER_LOGIN_NAME:-}
       MAIL_PASSWORD: ${EMAIL_SERVER_LOGIN_PASS:-}
       MAIL_ENCRYPTION: tls
-      MAIL_SENDER: ${EMAIL_SERVER_MAIL_FROM:-no-reply@${BASE_DOMAIN_NAME:-${BASE_HOST_NAME}}}
+      MAIL_SENDER: ${EMAIL_SERVER_MAIL_FROM:-no-reply@${BASE_HOST_NAME:-$HOSTNAME}}
       MAIL_NOTIFY_ON_ACCOUNT_CREATION: true
       MAIL_WARN_BEFORE_CERT_EXPIRES: 20d
       MAIL_NOTIFY_WHEN_CERT_EXPIRED: true
-      
       # Web UI Configuration
       WEB_ENABLED: true
       WEB_ENABLE_PUBLIC_LOG: false
       WEB_APP_TITLE: ${APP_ORG_NAME:-ACME CA Server}
       WEB_APP_DESCRIPTION: Self-hosted ACME CA Server
     ports:
-      - '172.17.0.1:59082:8080'
+      - '172.17.0.1:64100:8080'
     volumes:
       - '/etc/ssl/CA/CasjaysDev/certs/ca.crt:/import/ca.pem:ro'
       - '/etc/ssl/CA/CasjaysDev/private/ca.key:/import/ca.key:ro'
     depends_on:
       db:
         condition: service_healthy
-    labels:
-      - 'traefik.enable=true'
-      - 'cloudflare.enable=true'
-      - 'traefik.docker.network=proxy'
-      - 'cloudflare.service=http://acme-server:8080'
-      - 'cloudflare.hostname=acme.${CLOUDFLARE_ZONE_NAME:-}'
-      - 'traefik.http.routers.acme-server.entrypoints=http'
-      - 'traefik.http.routers.acme-server-secure.tls=true'
-      - 'traefik.http.routers.acme-server.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.middlewares.acme-server-https-redirect.redirectscheme.scheme=https'
-      - 'traefik.http.routers.acme-server.middlewares=acme-server-https-redirect'
-      - 'traefik.http.routers.acme-server-secure.entrypoints=https'
-      - 'traefik.http.routers.acme-server-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.routers.acme-server-secure.tls.certresolver=cloudflare'
-      - 'traefik.http.routers.acme-server-secure.service=acme-server'
-      - 'traefik.http.services.acme-server.loadbalancer.server.port=8080'
     networks:
       - acme
-      - proxy
-      - cloudflare
 
   db:
     image: postgres:15-alpine
@@ -97,7 +75,7 @@ services:
       CONTAINER_NAME: acme-db
       POSTGRES_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
-      - './volumes/data/db/postgres/acme:/var/lib/postgresql/data'
+      - './volumes/db/postgres/acme:/var/lib/postgresql/data:z'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
@@ -110,7 +88,3 @@ networks:
   acme:
     name: acme
     external: false
-  proxy:
-    external: true
-  cloudflare:
-    external: true
