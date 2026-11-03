@@ -51,6 +51,12 @@ services:
       WEB_ENABLE_PUBLIC_LOG: false
       WEB_APP_TITLE: ${APP_ORG_NAME:-ACME CA Server}
       WEB_APP_DESCRIPTION: Self-hosted ACME CA Server
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--spider', 'http://127.0.0.1:8080/acme/directory']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     ports:
       - '172.17.0.1:64100:8080'
     volumes:
